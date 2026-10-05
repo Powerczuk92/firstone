@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="pl" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BMS · Centrala NW-1</title>
+  <meta name="description" content="Wizualizacja interfejsu BMS centrali wentylacyjnej z obrotowym odzyskiem ciepła, recyrkulacją i chłodnicą wodną — realne parametry pracy w okresie letnim (model symulacyjny).">
+  <meta name="theme-color" content="#0c1320">
+  <meta property="og:title" content="BMS · Centrala NW-1 — praca letnia">
+  <meta property="og:description" content="Interaktywna synoptyka BMS centrali z wymiennikiem obrotowym, recyrkulacją i chłodnicą: wykres h-x, trendy, alarmy, nastawy.">
+  <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script>try { var t = localStorage.getItem('bms-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
+        <rect width="64" height="64" rx="14" fill="var(--panel-2)" stroke="var(--line-2)"/>
+        <circle cx="32" cy="32" r="20" fill="none" stroke="var(--accent)" stroke-width="3.5"/>
+        <g fill="var(--accent)">
+          <path d="M32 15c6 0 8 5 6.5 10.5L32 32l-2-11.5c0-4 0-5.5 2-5.5z"/>
+          <path d="M49 32c0 6-5 8-10.5 6.5L32 32l11.5-2c4 0 5.5 0 5.5 2z"/>
+          <path d="M32 49c-6 0-8-5-6.5-10.5L32 32l2 11.5c0 4 0 5.5-2 5.5z"/>
+          <path d="M15 32c0-6 5-8 10.5-6.5L32 32l-11.5 2c-4 0-5.5 0-5.5-2z"/>
+        </g>
+      </svg>
+      <div>
+        <div class="brand-title">BMS <span>· Biurowiec — strefa A</span></div>
+        <div class="brand-sub">NW-1 · centrala nawiewno-wywiewna · maszynownia dachowa M2</div>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Widoki">
+      <button role="tab" data-view="schemat" aria-selected="true">Schemat</button>
+      <button role="tab" data-view="hx">Wykres h-x</button>
+      <button role="tab" data-view="trend">Trendy</button>
+      <button role="tab" data-view="alarms">Alarmy <span class="badge" id="alarm-badge">0</span></button>
+      <button role="tab" data-view="sched">Harmonogram</button>
+      <button role="tab" data-view="info">Opis</button>
+    </nav>
+    <div class="top-right">
+      <div class="chip" title="Warunki zewnętrzne (stacja pogodowa na dachu)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+        <b id="out-t">—</b><span class="sep"></span><span id="out-rh">—</span><span class="sep hide-s"></span><span id="out-h" class="hide-s">—</span>
+      </div>
+      <div class="clock" title="Czas symulacji"><div id="clock-time">--:--:--</div><div id="clock-date">—</div></div>
+      <button class="icon-btn" id="theme-btn" title="Przełącz motyw jasny / ciemny" aria-label="Przełącz motyw">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/></svg>
+      </button>
+      <div class="user"><i></i>operator · poziom 2</div>
+    </div>
+  </header>
+
+  <div class="simbar">
+    <span class="demo-tag">DEMO</span>
+    <span class="sim-label">Symulacja letniego dnia pracy (model fizyczny centrali i strefy) — dane poglądowe</span>
+    <div class="sim-ctrls">
+      <div class="seg" id="speed-seg" aria-label="Prędkość symulacji">
+        <span>Czas</span>
+        <button data-speed="0" title="Pauza">❚❚</button>
+        <button data-speed="1" class="on" title="Czas rzeczywisty">×1</button>
+        <button data-speed="10">×10</button>
+        <button data-speed="60">×60</button>
+        <button data-speed="300">×300</button>
+        <button data-speed="1200">×1200</button>
+      </div>
+      <div class="seg" id="jump-seg" aria-label="Skok do godziny">
+        <span>Skok do</span>
+        <button data-t="02:00">02:00</button>
+        <button data-t="06:30">06:30</button>
+        <button data-t="09:00">09:00</button>
+        <button data-t="12:00">12:00</button>
+        <button data-t="14:30">14:30</button>
+        <button data-t="17:00">17:00</button>
+        <button data-t="20:00">20:00</button>
+        <button data-t="23:30">23:30</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="layout">
+    <section class="views">
+      <!-- SCHEMAT -->
+      <div class="view" id="view-schemat">
+        <div class="schem-hint">↔ Przesuń schemat w poziomie, aby zobaczyć całą centralę. Dotknij elementu, aby otworzyć jego kartę.</div>
+        <div class="schem-wrap"><svg id="ahu" xmlns="http://www.w3.org/2000/svg"></svg></div>
+        <div class="schem-foot">
+          <span><b>Odświeżanie:</b> 0,5 s</span>
+          <span><b>Sterownik:</b> DDC-NW1 · BACnet/IP 10.20.4.31</span>
+          <span><b>Kolory mediów:</b> konwencja DIN 1946, oznaczenia PN-EN 16798-3</span>
+          <span><span class="kbd">R</span> tryb ręczny elementu</span>
+        </div>
+      </div>
+
+      <!-- WYKRES h-x -->
+      <div class="view" id="view-hx" hidden>
+        <div class="view-head">
+          <h2>Wykres Molliera h-x — przemiany powietrza w centrali</h2>
+          <span class="sub">punkty pomiarowe i stany obliczeniowe, aktualizacja na żywo</span>
+        </div>
+        <div class="hx-grid">
+          <div class="chart-wrap"><canvas id="hx" aria-label="Wykres h-x przemian powietrza"></canvas><div class="tip" id="hx-tip" hidden></div></div>
+          <div class="state-table">
+            <table class="tbl">
+              <thead><tr><th>Punkt</th><th>t °C</th><th>φ %</th><th>x g/kg</th><th>h kJ/kg</th><th>t<sub>r</sub> °C</th><th>V̇ m³/h</th></tr></thead>
+              <tbody id="hx-tbody"></tbody>
+            </table>
+            <p class="note" id="hx-note"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRENDY -->
+      <div class="view" id="view-trend" hidden>
+        <div class="view-head">
+          <h2>Trendy dobowe</h2>
+          <span class="sub">próbkowanie 1 min · kliknij serię, aby ją ukryć lub pokazać</span>
+        </div>
+        <div class="pad" style="padding-bottom:0"><div class="legend" id="trend-legend"></div></div>
+        <div class="chart-wrap"><canvas id="trend" aria-label="Trendy dobowe"></canvas><div class="tip" id="trend-tip" hidden></div></div>
+      </div>
+
+      <!-- ALARMY -->
+      <div class="view" id="view-alarms" hidden>
+        <div class="view-head"><h2>Alarmy aktywne</h2><span class="sub">ostrzeżenia, nadpisania operatora, komunikaty</span></div>
+        <div class="pad" style="overflow-x:auto">
+          <table class="tbl alarm-table">
+            <thead><tr><th>Priorytet</th><th>Kod</th><th style="text-align:left">Opis</th><th>Od</th></tr></thead>
+            <tbody id="al-active"></tbody>
+          </table>
+        </div>
+        <div class="view-head" style="border-top:1px solid var(--line)"><h2>Dziennik zdarzeń</h2><span class="sub">ostatnie 120 wpisów</span></div>
+        <div class="pad" style="overflow-x:auto">
+          <table class="tbl alarm-table">
+            <thead><tr><th>Czas</th><th>Typ</th><th style="text-align:left">Zdarzenie</th></tr></thead>
+            <tbody id="al-log"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- HARMONOGRAM -->
+      <div class="view" id="view-sched" hidden>
+        <div class="view-head"><h2>Harmonogram tygodniowy — NW-1</h2><span class="sub">program obowiązujący w sezonie letnim</span></div>
+        <div class="pad">
+          <div class="sched" id="sched-grid"></div>
+          <div class="sched-legend">
+            <span><i style="background:color-mix(in srgb, var(--ok) 35%, transparent)"></i>program dzienny (praca z regulacją temperatury, CO₂ i wilgotności)</span>
+            <span><i style="background:color-mix(in srgb, #a78bfa 30%, transparent)"></i>okno chłodzenia nocnego (start warunkowy)</span>
+            <span><i style="background:var(--panel-2);border:1px solid var(--line)"></i>postój</span>
+          </div>
+          <div class="info-grid" style="margin-top:16px">
+            <div class="info-card">
+              <h3>Warunki chłodzenia nocnego</h3>
+              <ul>
+                <li>okno czasowe 22:00–05:30, wydatek 65 % nominalnego, 100 % powietrza świeżego,</li>
+                <li>start, gdy t pomieszczenia &gt; 23,0 °C i t zewnętrzna &lt; t pomieszczenia − 3 K (oraz &gt; 12 °C),</li>
+                <li>stop, gdy t pomieszczenia &lt; 21,5 °C lub różnica temperatur spadnie poniżej 1,5 K,</li>
+                <li>wymiennik W1 i chłodnica wyłączone — chłodzenie masy budynku powietrzem zewnętrznym.</li>
+              </ul>
+            </div>
+            <div class="info-card">
+              <h3>Dni specjalne 2026</h3>
+              <ul>
+                <li><b>15.08</b> — Wniebowzięcie NMP: program świąteczny (postój),</li>
+                <li><b>01.11</b> — Wszystkich Świętych: postój,</li>
+                <li><b>11.11</b> — Narodowe Święto Niepodległości: postój,</li>
+                <li><b>24–26.12</b> — program świąteczny, chłodzenie nocne wyłączone.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OPIS -->
+      <div class="view" id="view-info" hidden>
+        <div class="view-head"><h2>Opis instalacji i założenia symulacji</h2><span class="sub">okres letni — dzień upalny</span></div>
+        <div class="pad info-grid">
+          <div class="info-card">
+            <h3>Centrala NW-1</h3>
+            <ul>
+              <li>Nawiew <b>9 600 m³/h</b>, wywiew <b>9 200 m³/h</b> (nadciśnienie strefy ok. 400 m³/h).</li>
+              <li>Sekcje: przepustnice D1/D2, filtry F1 ePM10 50 %, F3 ePM1 55 %, F2 ePM10 50 %, <b>sorpcyjny wymiennik obrotowy W1</b> Ø1600 mm z falownikiem, <b>komora mieszania</b> z przepustnicą recyrkulacji D3, <b>chłodnica wodna CC</b> (woda lodowa 7 °C, zawór 3-drogowy Y1), eliminator kropel, wentylatory EC SF i EF, tłumik T2.</li>
+              <li>Obsługiwana strefa: open space na 2. piętrze, ok. 800 m², do 80 osób, żaluzje zewnętrzne.</li>
+            </ul>
+          </div>
+          <div class="info-card">
+            <h3>Warunki obliczeniowe — lato</h3>
+            <ul>
+              <li>Dzień symulacji: <b>środa 15.07.2026</b>, Warszawa, ciśnienie 1009 hPa.</li>
+              <li>Temperatura zewnętrzna od <b>17,8 °C</b> (ok. 06:00) do <b>30,4 °C</b> (15:00–16:00), przebieg wg profilu dobowego ASHRAE.</li>
+              <li>Zawartość wilgoci 10,7–11,4 g/kg (RH od ok. 85 % rano do ok. 41 % po południu), nasłonecznienie do 830 W/m².</li>
+              <li>Zyski w strefie: ludzie 75 W jawnego ciepła i 70 g/h wilgoci na osobę, sprzęt do 11 kW, oświetlenie do 3,6 kW, zyski słoneczne do ok. 10 kW.</li>
+            </ul>
+          </div>
+          <div class="info-card">
+            <h3>Sekwencja regulacji (lato)</h3>
+            <ol>
+              <li><b>Kaskada temperatury:</b> T nawiewu = f(T wywiewu), 22 °C przy 22 °C w strefie → 18 °C przy temperaturze zadanej, powyżej niej człon PI obniża nawiew do 16 °C. <b>Kompensacja letnia:</b> +0,2 K/K powyżej 26 °C (maks. +1,5 K).</li>
+              <li><b>Free cooling ↔ odzysk chłodu:</b> gdy t zewn. &gt; t wyw. + 1 K lub h zewn. &gt; h wyw. + 2 kJ/kg, wirnik W1 pracuje na 100 %, a udział powietrza świeżego spada do minimum (40 %, korekta PI wg CO₂ ≤ 900 ppm). Gdy powietrze zewnętrzne jest chłodniejsze, 100 % powietrza świeżego i postój wirnika.</li>
+              <li><b>Temperatura nawiewu:</b> zawór chłodnicy Y1; rano wymiennik W1 odzyskuje ciepło, jeżeli nawiew byłby zbyt zimny.</li>
+              <li><b>Osuszanie:</b> regulator PI wilgotności bezwzględnej wywiewu (x ≤ 10,7 g/kg) obniża zadaną temperaturę nawiewu.</li>
+              <li><b>Wentylatory:</b> stały wydatek; start po otwarciu przepustnic, przepustnice zamykane po zatrzymaniu.</li>
+            </ol>
+          </div>
+          <div class="info-card">
+            <h3>Model obliczeniowy</h3>
+            <ul>
+              <li>Psychrometria powietrza wilgotnego (ciśnienie nasycenia wg Magnusa), stany na wykresie Molliera h-x.</li>
+              <li>Wymiennik obrotowy: ε-NTU (przeciwprąd) z wpływem prędkości wirnika i niezrównoważenia strumieni, odzysk wilgoci (rotor sorpcyjny).</li>
+              <li>Chłodnica: ε-NTU w potencjale entalpii (wężownica sucha/mokra), ADP i współczynnik obejścia, bilans po stronie wody, zawór stałoprocentowy z autorytetem 0,5.</li>
+              <li>Wentylatory: krzywe wentylatora i instalacji, moc z uwzględnieniem sprawności; ciepło silnika podgrzewa nawiew.</li>
+              <li>Strefa: model 2-węzłowy (powietrze + masa akumulacyjna), bilans wilgoci i CO₂.</li>
+            </ul>
+            <p class="note">Nazwy obiektu i adresy są fikcyjne. Wartości mają charakter poglądowy i nie zastępują obliczeń projektowych.</p>
+          </div>
+          <div class="info-card">
+            <h3>Oznaczenia mediów</h3>
+            <div class="swatches">
+              <span><i style="background:var(--oda)"></i>ODA — powietrze zewnętrzne</span>
+              <span><i style="background:var(--sup)"></i>SUP — powietrze nawiewane</span>
+              <span><i style="background:var(--eta)"></i>ETA — powietrze wywiewane</span>
+              <span><i style="background:var(--eha)"></i>EHA — powietrze wyrzucane</span>
+              <span><i style="background:var(--rca)"></i>RCA — recyrkulacja</span>
+              <span><i style="background:var(--mia)"></i>MIA — mieszanina</span>
+              <span><i style="background:var(--chws)"></i>woda lodowa — zasilanie</span>
+              <span><i style="background:var(--chwr)"></i>woda lodowa — powrót</span>
+            </div>
+          </div>
+          <div class="info-card">
+            <h3>Obsługa</h3>
+            <ul>
+              <li>Kliknij element na schemacie (wentylator, wymiennik, chłodnicę, zawór, przepustnice, filtr), aby otworzyć kartę urządzenia i przełączyć go w tryb ręczny.</li>
+              <li>Nastawy w panelu bocznym zmieniają regulację w czasie rzeczywistym.</li>
+              <li>Pasek symulacji pozwala przyspieszyć czas lub przejść do wybranej pory dnia, np. 06:30 (odzysk ciepła), 09:00 (free cooling), 14:30 (odzysk chłodu + recyrkulacja), 02:00 (chłodzenie nocne).</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <section class="card">
+        <div class="card-h">Stan centrali <span class="muted">NW-1</span></div>
+        <div class="card-b">
+          <div class="status-main">
+            <span class="status-lamp" id="st-lamp"></span>
+            <div class="status-txt"><b id="st-title">—</b><span id="st-sub">—</span></div>
+          </div>
+          <div class="modes" id="modes" role="group" aria-label="Tryb pracy centrali">
+            <button data-mode="AUTO">AUTO</button>
+            <button data-mode="ON">PRACA</button>
+            <button data-mode="OFF">STOP</button>
+          </div>
+          <dl class="kv">
+            <dt>Program czasowy</dt><dd id="kv-sched">—</dd>
+            <dt>Sezon</dt><dd><span class="pill cool">LATO — chłodzenie</span></dd>
+            <dt>T zadana pomieszczenia</dt><dd id="kv-spc">—</dd>
+            <dt>T zadana nawiewu</dt><dd id="kv-sps">—</dd>
+            <dt>Osuszanie</dt><dd id="kv-dehum">—</dd>
+            <dt>Strefa</dt><dd id="kv-room">—</dd>
+            <dt>Obciążenie strefy</dt><dd id="kv-occ">—</dd>
+          </dl>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-h">Energia i wydajność <span class="muted">chwilowo</span></div>
+        <div class="card-b">
+          <div class="kpis">
+            <div class="kpi"><div class="k">Chłodnica CC</div><div class="v" id="k-cool">—</div><div class="s" id="k-cool-s">—</div><div class="bar"><i id="k-cool-b1" style="background:var(--sup)"></i><i id="k-cool-b2" style="background:var(--chwr)"></i></div></div>
+            <div class="kpi"><div class="k">Odzysk W1</div><div class="v" id="k-rec">—</div><div class="s" id="k-rec-s">—</div></div>
+            <div class="kpi"><div class="k">Recyrkulacja</div><div class="v" id="k-rca">—</div><div class="s" id="k-rca-s">—</div></div>
+            <div class="kpi"><div class="k">Wentylatory</div><div class="v" id="k-fan">—</div><div class="s" id="k-fan-s">—</div></div>
+            <div class="kpi"><div class="k">Redukcja obciążenia</div><div class="v" id="k-red">—</div><div class="s" id="k-red-s">—</div></div>
+            <div class="kpi"><div class="k">Skropliny</div><div class="v" id="k-cond">—</div><div class="s" id="k-cond-s">—</div></div>
+          </div>
+          <div class="today">
+            <span>Chłód z chłodnicy (dziś)</span><b id="d-cool">—</b>
+            <span>Odzysk chłodu W1 (dziś)</span><b id="d-rec">—</b>
+            <span>Efekt recyrkulacji (dziś)</span><b id="d-rca">—</b>
+            <span>Energia wentylatorów (dziś)</span><b id="d-fan">—</b>
+            <span>Skropliny (dziś)</span><b id="d-cond">—</b>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-h">Nastawy <span class="muted">zmiany na żywo</span></div>
+        <div class="card-b">
+          <div class="sp-list" id="sp-list"></div>
+          <div class="sp-actions"><button class="link-btn" id="sp-reset">Przywróć nastawy domyślne</button></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-h">Alarmy i zdarzenia</div>
+        <div class="card-b">
+          <div class="act-alarms" id="act-alarms"></div>
+          <ul class="ev-list" id="ev-list"></ul>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <footer>
+    Wizualizacja demonstracyjna interfejsu BMS · dane generowane przez model symulacyjny w przeglądarce ·
+    <a href="https://github.com/Powerczuk92/firstone">kod źródłowy</a>
+  </footer>
+
+  <dialog id="fp" class="faceplate" aria-labelledby="fp-title">
+    <div class="fp-head">
+      <span class="tag" id="fp-tag"></span>
+      <h3 id="fp-title"></h3>
+      <button class="icon-btn" id="fp-close" aria-label="Zamknij kartę">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div id="fp-body"></div>
+  </dialog>
+
+  <script src="assets/js/psychro.js"></script>
+  <script src="assets/js/model.js"></script>
+  <script src="assets/js/charts.js"></script>
+  <script src="assets/js/schematic.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
